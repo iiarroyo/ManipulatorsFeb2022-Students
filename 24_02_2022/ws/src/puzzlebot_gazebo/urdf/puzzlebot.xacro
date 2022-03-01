@@ -64,21 +64,28 @@
   </joint>
 
 <!-- TASK 1a - create the shape needed for the wheel specified in  -->
- <!--RIGHT WHEEL 
-	<link name="right_wheel">
-	 
-	</link> -->
+ <!-- RIGHT WHEEL  -->
+	<xacro:macro name="wheel" params="prefix roty">
+		<link name="${prefix}_wheel">
+			<visual>
+			<geometry>
+				<mesh filename="file://${mesh_wheel}"/> 
+				<cylinder radius="${wheelRadius}" length="${wheelHeight}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="${roty} 0 0"/>
+			</visual>
+		</link>
+	</xacro:macro>
+
+	<xacro:wheel prefix="right" roty="-1.57075" />
 
 <!-- TASK 1b -remember using Macros-->
-<!-- LEFT WHEEL 
-	<link name="left_wheel">
-		
-	
-	</link> -->
+<!-- LEFT WHEEL  -->
+	<xacro:wheel prefix="left" roty="1.57075" />
 	     	  
 
 <!-- Remove comment to add joint --> 
-<!-- JOINTS   
+<!-- JOINTS    -->
   <joint name="base_to_right_w" type="continuous">
 	  <parent link="chassis" />
 	  <child link="right_wheel" />
@@ -92,7 +99,6 @@
 	  <origin xyz="0.05 0.09 0" />
 	  <axis xyz="0 1 0" rpy="0 0 0" />
 	</joint>
---> 
 
   
 <!-- TRANSMISSIONS (For a more complex model and it represents actuator attributes) -->
