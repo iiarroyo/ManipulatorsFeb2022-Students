@@ -6,10 +6,10 @@
 
 <xacro:include filename="$(find puzzlebot_gazebo)/urdf/parameters.xacro" />
 <xacro:include filename="$(find puzzlebot_gazebo)/urdf/macros.xacro" />
-<!--
+
 <xacro:include filename="$(find puzzlebot_gazebo)/urdf/puzzlebot.gazebo" />
 <xacro:include filename="$(find puzzlebot_gazebo)/urdf/materials.xacro" />
---> 
+ 
 
 <!-- Dummy link needed to load the model properly-->
   <link name="base_link">
@@ -65,23 +65,35 @@
 
 <!-- TASK 1a - create the shape needed for the wheel specified in  -->
  <!-- RIGHT WHEEL  -->
-	<xacro:macro name="wheel" params="prefix roty">
+	<xacro:macro name="wheel" params="prefix">
 		<link name="${prefix}_wheel">
 			<visual>
-			<geometry>
-				<mesh filename="file://${mesh_wheel}"/> 
-				<cylinder radius="${wheelRadius}" length="${wheelHeight}"/>
-			</geometry>
-			<origin xyz="0 0 0" rpy="${roty} 0 0"/>
+				<origin xyz="0 0 0" rpy="-${PI/2} 0 0" />
+				<geometry>
+					<mesh filename="file://${mesh_wheel}"/>
+				</geometry>
 			</visual>
+
+			<collision>
+				<origin xyz="0 0 0 " rpy="-${PI/2} 0 0"/>
+					<geometry>
+						<cylinder length="${wheelHeight}" radius="${wheelRadius}" />
+					</geometry>
+			</collision>
+				
+			<inertial>
+				<mass value="${wheelMass}"/>
+				<origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
+				<xacro:wheel_inertia r="${wheelRadius}" l="${wheelHeight}" m="${wheelMass}"/> 
+			</inertial> 
 		</link>
 	</xacro:macro>
 
-	<xacro:wheel prefix="right" roty="-1.57075" />
+	<xacro:wheel prefix="right"/>
 
 <!-- TASK 1b -remember using Macros-->
 <!-- LEFT WHEEL  -->
-	<xacro:wheel prefix="left" roty="1.57075" />
+	<xacro:wheel prefix="left"/>
 	     	  
 
 <!-- Remove comment to add joint --> 
@@ -102,5 +114,25 @@
 
   
 <!-- TRANSMISSIONS (For a more complex model and it represents actuator attributes) -->
+	<transmission name="right_wheel_trans">
+		<type>transmission_interface/SimpleTransmission</type>
+		<joint name="base_to_right_w">
+			<hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+		</joint>
+		<actuator name="right_wheel_motor">
+		<mechanicalReduction>34</mechanicalReduction>
+		<hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+		</actuator>
+	</transmission>
 
+	<transmission name="left_wheel_trans">
+		<type>transmission_interface/SimpleTransmission</type>
+		<joint name="base_to_left_w">
+			<hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+		</joint>
+		<actuator name="left_wheel_motor">
+		<mechanicalReduction>34</mechanicalReduction>
+		<hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+		</actuator>
+	</transmission>  
 </robot>
