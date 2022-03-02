@@ -14,11 +14,3 @@ catkin_package(CATKIN_DEPENDS  std_msgs nav_msgs geometry_msgs sensor_msgs roscp
 include_directories(include 
 ${catkin_INCLUDE_DIRS}
 ${OpenCV_INCLUDE_DIRS})
-add_executable(${PROJECT_NAME}_node src/puzzlebot_control_node.cpp)
-
-add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-
-target_link_libraries(${PROJECT_NAME}_node
-  ${catkin_LIBRARIES}
- )
