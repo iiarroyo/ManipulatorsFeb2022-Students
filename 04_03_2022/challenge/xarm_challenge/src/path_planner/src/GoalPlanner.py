@@ -141,7 +141,9 @@ class StateGatherer():
 
 
     def sendGoal(self,req):
-
+        """
+        hola hola hola
+        """
         # Proposed state machine to control the goals (currently 1)
         if req.action == "place":
             if self.status == 1:
