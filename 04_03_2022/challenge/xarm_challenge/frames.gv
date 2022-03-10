@@ -1,0 +1,24 @@
+digraph G {
+"sensor_frame" -> "world"[label="Broadcaster: /base_broadcaster\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 2801.018 sec old)\nBuffer length: 0.000 sec\n"];
+"link_base" -> "gazebo_base"[label="Broadcaster: /robot_base_broadcaster\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 2801.018 sec old)\nBuffer length: 0.000 sec\n"];
+"world" -> "link_base"[label="Broadcaster: /robot_state_publisher\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 2801.018 sec old)\nBuffer length: 0.000 sec\n"];
+"link_eef" -> "xarm_gripper_base_link"[label="Broadcaster: /robot_state_publisher\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 2801.018 sec old)\nBuffer length: 0.000 sec\n"];
+"link6" -> "link_eef"[label="Broadcaster: /robot_state_publisher\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 2801.018 sec old)\nBuffer length: 0.000 sec\n"];
+"link5" -> "link6"[label="Broadcaster: /robot_state_publisher\nAverage rate: 50.207 Hz\nMost recent transform: 2800.987 ( 0.031 sec old)\nBuffer length: 4.820 sec\n"];
+"xarm_gripper_base_link" -> "link_tcp"[label="Broadcaster: /robot_state_publisher\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 2801.018 sec old)\nBuffer length: 0.000 sec\n"];
+"xarm_gripper_base_link" -> "left_outer_knuckle"[label="Broadcaster: /robot_state_publisher\nAverage rate: 50.207 Hz\nMost recent transform: 2800.987 ( 0.031 sec old)\nBuffer length: 4.820 sec\n"];
+"link_base" -> "link1"[label="Broadcaster: /robot_state_publisher\nAverage rate: 50.207 Hz\nMost recent transform: 2800.987 ( 0.031 sec old)\nBuffer length: 4.820 sec\n"];
+"link1" -> "link2"[label="Broadcaster: /robot_state_publisher\nAverage rate: 50.207 Hz\nMost recent transform: 2800.987 ( 0.031 sec old)\nBuffer length: 4.820 sec\n"];
+"link2" -> "link3"[label="Broadcaster: /robot_state_publisher\nAverage rate: 50.207 Hz\nMost recent transform: 2800.987 ( 0.031 sec old)\nBuffer length: 4.820 sec\n"];
+"link3" -> "link4"[label="Broadcaster: /robot_state_publisher\nAverage rate: 50.207 Hz\nMost recent transform: 2800.987 ( 0.031 sec old)\nBuffer length: 4.820 sec\n"];
+"link4" -> "link5"[label="Broadcaster: /robot_state_publisher\nAverage rate: 50.207 Hz\nMost recent transform: 2800.987 ( 0.031 sec old)\nBuffer length: 4.820 sec\n"];
+"left_outer_knuckle" -> "left_finger"[label="Broadcaster: /robot_state_publisher\nAverage rate: 50.207 Hz\nMost recent transform: 2800.987 ( 0.031 sec old)\nBuffer length: 4.820 sec\n"];
+"xarm_gripper_base_link" -> "left_inner_knuckle"[label="Broadcaster: /robot_state_publisher\nAverage rate: 50.207 Hz\nMost recent transform: 2800.987 ( 0.031 sec old)\nBuffer length: 4.820 sec\n"];
+"right_outer_knuckle" -> "right_finger"[label="Broadcaster: /robot_state_publisher\nAverage rate: 50.207 Hz\nMost recent transform: 2800.987 ( 0.031 sec old)\nBuffer length: 4.820 sec\n"];
+"xarm_gripper_base_link" -> "right_outer_knuckle"[label="Broadcaster: /robot_state_publisher\nAverage rate: 50.207 Hz\nMost recent transform: 2800.987 ( 0.031 sec old)\nBuffer length: 4.820 sec\n"];
+"xarm_gripper_base_link" -> "right_inner_knuckle"[label="Broadcaster: /robot_state_publisher\nAverage rate: 50.207 Hz\nMost recent transform: 2800.987 ( 0.031 sec old)\nBuffer length: 4.820 sec\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 2801.018"[ shape=plaintext ] ;
+ }->"sensor_frame";
+}
