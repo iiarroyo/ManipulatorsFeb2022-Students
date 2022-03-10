@@ -86,7 +86,8 @@ class myNode():
 if __name__ == '__main__':
   try:
     node = myNode()
-    node.main()
+    node.
+    # node.main()
 
   except rospy.ROSInterruptException:
     pass
