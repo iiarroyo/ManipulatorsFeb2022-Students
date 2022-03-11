@@ -14,6 +14,9 @@ from moveit_msgs.msg import Grasp
 class Planner():
   def __init__(self):
     moveit_commander.roscpp_initialize(sys.argv)
+    rospy.init_node('Move', anonymous=True)
+    self.robot = moveit_commander.RobotCommander()
+    self.arm_group = moveit_commander.MoveGroupCommander("xarm6")
     self.tfBuffer = tf2_ros.Buffer()
     self.listener = tf2_ros.TransformListener(self.tfBuffer)
     #TODO: Initialise move it interface
@@ -38,7 +41,7 @@ class Planner():
 
   def goToPose(self,pose_goal):
     #TODO: Code used to move to a given position using move it
-    pass
+    go_to_pos = self.hand_group
 
 
   def detachBox(self,box_name):
