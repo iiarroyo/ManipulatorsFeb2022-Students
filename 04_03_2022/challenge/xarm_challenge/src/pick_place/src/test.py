@@ -23,13 +23,13 @@ plan2 = hand_group.go(wait = True)
 
 
 pose_target = geometry_msgs.msg.Pose()
-pose_target.position.x = -0.18663
-pose_target.position.y = 0.41111
-pose_target.position.z = 1.045
-pose_target.orientation.x = -0.000004
-pose_target.orientation.y = 0.0000004
-pose_target.orientation.z = 0.001828
-pose_target.orientation.w = 0.001828
+pose_target.position.x = 0.5
+pose_target.position.y = -0.5
+pose_target.position.z = 0.5
+pose_target.orientation.x = 0
+pose_target.orientation.y = 0
+pose_target.orientation.z = 0
+pose_target.orientation.w = 1
 
 arm_group.set_pose_target(pose_target)
 plan1 = arm_group.go()

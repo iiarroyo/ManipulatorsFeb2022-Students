@@ -10,11 +10,12 @@ from geometry_msgs.msg import PoseStamped, Pose
 from path_planner.srv import *
 from tf.transformations import *
 from moveit_msgs.msg import Grasp
+import geometry_msgs.msg
 
 class Planner():
   def __init__(self):
     moveit_commander.roscpp_initialize(sys.argv)
-    rospy.init_node('Move', anonymous=True)
+    # rospy.init_node('Move', anonymous=True)
     self.robot = moveit_commander.RobotCommander()
     self.arm_group = moveit_commander.MoveGroupCommander("xarm6")
     self.hand_group = moveit_commander.MoveGroupCommander("xarm_gripper")
@@ -42,9 +43,19 @@ class Planner():
                "DepositBoxBlue"]
 
   def goToPose(self,pose_goal):
+    pose_target = geometry_msgs.msg.Pose()
+    pose_target.position.x = -0.18663
+    pose_target.position.y = 0
+    pose_target.position.z = 0
+    pose_target.orientation.x = -0.000004
+    pose_target.orientation.y = 0.0000004
+    pose_target.orientation.z = 0.001828
+    pose_target.orientation.w = 0.001828
     #TODO: Code used to move to a given position using move it
-    go_to_pos = self.hand_group
-
+    self.arm_group.set_pose_target(pose_target)
+    # if self.wait_for_state_update():
+    #   act = self.arm_group.go(wait = True)
+    act = self.arm_group.go()
 
   def detachBox(self,box_name):
     #TODO: Open the gripper and call the service that releases the box
@@ -54,6 +65,9 @@ class Planner():
   def attachBox(self,box_name):
     pass
   #TODO: Close the gripper and call the service that releases the box
+  
+  def eef_to_box(self, eef_pose, box_pose, base_pose):
+    pass
 
 
 
@@ -89,13 +103,13 @@ class myNode():
     self.planner = Planner()
     goal = self.getGoal('place')
     # print(self.tf_goal(goal.goal))
-    goal = self.tf_goal("RedBox")
+    goal_pose = self.tf_goal("RedBox")
+    print(type(goal_pose))
     self.planner.goToPose(goal)
-
     self.planner.addObstacles()
 
     rospy.signal_shutdown("Task Completed")
-
+    moveit_commander.roscpp_shutdown()
 
 
 if __name__ == '__main__':
