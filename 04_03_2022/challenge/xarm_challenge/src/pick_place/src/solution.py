@@ -12,9 +12,10 @@ from tf.transformations import *
 from moveit_msgs.msg import Grasp
 
 class Planner():
-
   def __init__(self):
-    moveit_commander.roscpp_initialize()
+    moveit_commander.roscpp_initialize(sys.argv)
+    self.tfBuffer = tf2_ros.Buffer()
+    self.listener = tf2_ros.TransformListener(self.tfBuffer)
     #TODO: Initialise move it interface
 
   def wait_for_state_update(self,box_name, box_is_known=False, box_is_attached=False, timeout=0.5):
@@ -54,8 +55,7 @@ class Planner():
 class myNode():
   def __init__(self):
     rospy.init_node('pick_place', anonymous=True)
-    tfBuffer = tf2_ros.Buffer()
-    listener = tf2_ros.TransformListener(tfBuffer)
+    self.rate = rospy.Rate(5)
     #TODO: Initialise ROS and create the service calls
 
     # Good practice trick, wait until the required services are online before continuing with the aplication
@@ -64,19 +64,28 @@ class myNode():
 
   def getGoal(self,action):
     #Call the service that will provide you with a suitable target for the movement
-    goal = rospy.ServiceProxy('RequestGoal', RequestGoal)
-    return goal
+    req_goal = rospy.ServiceProxy('RequestGoal', RequestGoal)
+    return req_goal(action)
 
 
   def tf_goal(self, goal):
-    pass
+    trans = None
+    while not trans:
+      try:
+        trans = self.planner.tfBuffer.lookup_transform("link_base", goal , rospy.Time.now(), rospy.Duration(1.0))
+      except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+        self.rate.sleep()
+
+    return trans
     #TODO:Use tf2 to retrieve the position of the target with respect to the proper reference frame
 
 
   def main(self):
-    pass
-    #TODO: Main code that contains the aplication
     self.planner = Planner()
+    goal = self.getGoal('place')
+    # print(self.tf_goal(goal.goal))
+    print(self.tf_goal("RedBox"))
+
     self.planner.addObstacles()
 
     rospy.signal_shutdown("Task Completed")
@@ -86,8 +95,7 @@ class myNode():
 if __name__ == '__main__':
   try:
     node = myNode()
-    node.
-    # node.main()
+    node.main()
 
   except rospy.ROSInterruptException:
     pass
