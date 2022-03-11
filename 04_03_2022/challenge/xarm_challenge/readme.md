@@ -9,6 +9,13 @@ Friendly reminder, the world has already been created for you and you don't need
 0) Download the 'table' 3D model: In Gazebo simulator, navigate through the model database for 'table' item, drag and place
    the 3D model inside the virtual environment. It will then be downloaded locally, as 'table' is needed for running the demo.
    An example of how to do this can be found in Rebeca's sesion.
+
+```
+cd ~/ManipulatorsFeb2022-Students/04_03_2022/challenge/xarm_challenge
+source devel/setup.bash
+```
+
+
 1) 
 ```
 roslaunch xarm_gazebo xarm6_challenge.launch
