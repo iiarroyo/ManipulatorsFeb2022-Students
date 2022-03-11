@@ -17,6 +17,8 @@ class Planner():
     rospy.init_node('Move', anonymous=True)
     self.robot = moveit_commander.RobotCommander()
     self.arm_group = moveit_commander.MoveGroupCommander("xarm6")
+    self.hand_group = moveit_commander.MoveGroupCommander("xarm_gripper")
+
     self.tfBuffer = tf2_ros.Buffer()
     self.listener = tf2_ros.TransformListener(self.tfBuffer)
     #TODO: Initialise move it interface
@@ -87,7 +89,8 @@ class myNode():
     self.planner = Planner()
     goal = self.getGoal('place')
     # print(self.tf_goal(goal.goal))
-    print(self.tf_goal("RedBox"))
+    goal = self.tf_goal("RedBox")
+    self.planner.goToPose(goal)
 
     self.planner.addObstacles()
 
