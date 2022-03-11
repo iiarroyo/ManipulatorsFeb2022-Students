@@ -15,9 +15,9 @@ class Planner():
   def __init__(self):
     moveit_commander.roscpp_initialize(sys.argv)
     rospy.init_node('Move', anonymous=True)
-    self.robot = moveit_commander.RobotCommander()
-    self.arm_group = moveit_commander.MoveGroupCommander("xarm6")
-    self.hand_group = moveit_commander.MoveGroupCommander("xarm_gripper")
+    #self.robot = moveit_commander.RobotCommander()
+    #self.arm_group = moveit_commander.MoveGroupCommander("xarm6")
+    #self.hand_group = moveit_commander.MoveGroupCommander("xarm_gripper")
 
     self.tfBuffer = tf2_ros.Buffer()
     self.listener = tf2_ros.TransformListener(self.tfBuffer)
@@ -43,7 +43,9 @@ class Planner():
 
   def goToPose(self,pose_goal):
     #TODO: Code used to move to a given position using move it
-    go_to_pos = self.hand_group
+    pass
+
+    #go_to_pos = self.hand_group
 
 
   def detachBox(self,box_name):
@@ -90,9 +92,10 @@ class myNode():
     goal = self.getGoal('place')
     # print(self.tf_goal(goal.goal))
     goal = self.tf_goal("RedBox")
-    self.planner.goToPose(goal)
+    print(goal)
+    #self.planner.goToPose(goal)
 
-    self.planner.addObstacles()
+    #self.planner.addObstacles()
 
     rospy.signal_shutdown("Task Completed")
 
