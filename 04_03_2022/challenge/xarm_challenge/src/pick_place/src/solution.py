@@ -10,18 +10,18 @@ from geometry_msgs.msg import PoseStamped, Pose
 from path_planner.srv import *
 from tf.transformations import *
 from moveit_msgs.msg import Grasp
+import geometry_msgs.msg
+import time
 
 class Planner():
   def __init__(self):
     moveit_commander.roscpp_initialize(sys.argv)
-    rospy.init_node('Move', anonymous=True)
-    #self.robot = moveit_commander.RobotCommander()
-    #self.arm_group = moveit_commander.MoveGroupCommander("xarm6")
-    #self.hand_group = moveit_commander.MoveGroupCommander("xarm_gripper")
-
+    self.robot = moveit_commander.RobotCommander()
+    self.arm_group = moveit_commander.MoveGroupCommander("xarm6")
+    self.hand_group = moveit_commander.MoveGroupCommander("xarm_gripper")
     self.tfBuffer = tf2_ros.Buffer()
     self.listener = tf2_ros.TransformListener(self.tfBuffer)
-    #TODO: Initialise move it interface
+    self.attach_srv = rospy.ServiceProxy('AttachObject', AttachObject)
 
   def wait_for_state_update(self,box_name, box_is_known=False, box_is_attached=False, timeout=0.5):
     #TODO: Whenever we change something in moveit we need to make sure that the interface has been updated properly
@@ -42,22 +42,34 @@ class Planner():
                "DepositBoxBlue"]
 
   def goToPose(self,pose_goal):
-    #TODO: Code used to move to a given position using move it
-    pass
-
-    #go_to_pos = self.hand_group
-
+    pose_target = geometry_msgs.msg.Pose()
+    pose_target.position.x = pose_goal.transform.translation.x
+    pose_target.position.y = pose_goal.transform.translation.y
+    pose_target.position.z = pose_goal.transform.translation.z + 0.1
+    pose_target.orientation.x = 1
+    pose_target.orientation.y = 0
+    pose_target.orientation.z = 0 
+    pose_target.orientation.w = 0
+   
+    self.arm_group.set_pose_target(pose_target)
+    act = self.arm_group.go(wait = True) 
 
   def detachBox(self,box_name):
     #TODO: Open the gripper and call the service that releases the box
-    pass
+    self.hand_group.set_named_target("open")
+    self.attach_srv(False, box_name)
+    time.sleep(2)
+    pose_target = geometry_msgs.msg.Pose()
+    pose_target.position.z = 0.3
 
 
   def attachBox(self,box_name):
-    pass
-  #TODO: Close the gripper and call the service that releases the box
-
-
+    self.hand_group.set_named_target("close")
+    self.attach_srv(True, box_name)
+    time.sleep(2)
+    pose_target = geometry_msgs.msg.Pose()
+    pose_target.position.z = 0.3
+  
 
 class myNode():
   def __init__(self):
@@ -74,7 +86,6 @@ class myNode():
     req_goal = rospy.ServiceProxy('RequestGoal', RequestGoal)
     return req_goal(action)
 
-
   def tf_goal(self, goal):
     trans = None
     while not trans:
@@ -84,22 +95,18 @@ class myNode():
         self.rate.sleep()
 
     return trans
-    #TODO:Use tf2 to retrieve the position of the target with respect to the proper reference frame
 
 
   def main(self):
     self.planner = Planner()
     goal = self.getGoal('place')
-    # print(self.tf_goal(goal.goal))
-    goal = self.tf_goal("RedBox")
-    print(goal)
-    #self.planner.goToPose(goal)
-
-    #self.planner.addObstacles()
+    goal_pose = self.tf_goal("GreenBox")
+    self.planner.goToPose(goal_pose)
+    time.sleep(2)
+    self.planner.attachBox("GreenBox")
 
     rospy.signal_shutdown("Task Completed")
-
-
+    moveit_commander.roscpp_shutdown()
 
 if __name__ == '__main__':
   try:
