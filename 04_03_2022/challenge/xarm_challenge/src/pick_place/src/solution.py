@@ -66,7 +66,7 @@ class Planner():
     pose_target = geometry_msgs.msg.Pose()
     pose_target.position.x = pose_goal.transform.translation.x
     pose_target.position.y = pose_goal.transform.translation.y
-    pose_target.position.z = pose_goal.transform.translation.z+0.05
+    pose_target.position.z = pose_goal.transform.translation.z+0.04
     pose_target.orientation.x = 1
     pose_target.orientation.y = 0
     pose_target.orientation.z = 0 
@@ -128,6 +128,28 @@ class myNode():
     self.planner.goToPose(goal_pose)
     self.planner.detachBox("RedBox")
     
+    goal = self.getGoal("pick")
+    goal_pose = self.tf_goal("BlueBox")
+    self.planner.goToPose(goal_pose)
+    self.planner.attachBox("BlueBox",goal_pose)
+
+    goal = self.getGoal("place")
+    goal_pose = self.tf_goal("DepositBoxBlue")
+    self.planner.goToPose(goal_pose)
+    self.planner.detachBox("BlueBox")
+
+    goal = self.getGoal("pick")
+    goal_pose = self.tf_goal("GreenBox")
+    self.planner.goToPose(goal_pose)
+    self.planner.attachBox("GreenBox",goal_pose)
+
+    goal = self.getGoal("place")
+    goal_pose = self.tf_goal("DepositBoxGreen")
+    self.planner.goToPose(goal_pose)
+    self.planner.detachBox("GreenBox")
+
+
+
     # while goal!="end"
     # 1 ciclo
     # goal = self.getGoal('place')
