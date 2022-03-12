@@ -45,7 +45,7 @@ class Planner():
     pose_target = geometry_msgs.msg.Pose()
     pose_target.position.x = pose_goal.transform.translation.x
     pose_target.position.y = pose_goal.transform.translation.y
-    pose_target.position.z = pose_goal.transform.translation.z + 0.1
+    pose_target.position.z = pose_goal.transform.translation.z+0.15
     pose_target.orientation.x = 1
     pose_target.orientation.y = 0
     pose_target.orientation.z = 0 
@@ -53,22 +53,40 @@ class Planner():
    
     self.arm_group.set_pose_target(pose_target)
     act = self.arm_group.go(wait = True) 
+    time.sleep(2)
 
   def detachBox(self,box_name):
     #TODO: Open the gripper and call the service that releases the box
+    time.sleep(1)
     self.hand_group.set_named_target("open")
+    act_2 = self.hand_group.go(wait = True) 
     self.attach_srv(False, box_name)
-    time.sleep(2)
+
+  def attachBox(self,box_name,pose_goal):
     pose_target = geometry_msgs.msg.Pose()
-    pose_target.position.z = 0.3
-
-
-  def attachBox(self,box_name):
+    pose_target.position.x = pose_goal.transform.translation.x
+    pose_target.position.y = pose_goal.transform.translation.y
+    pose_target.position.z = pose_goal.transform.translation.z+0.05
+    pose_target.orientation.x = 1
+    pose_target.orientation.y = 0
+    pose_target.orientation.z = 0 
+    pose_target.orientation.w = 0    
+    self.arm_group.set_pose_target(pose_target)
+    act_3 = self.arm_group.go(wait = True) 
+    
     self.hand_group.set_named_target("close")
+    act_2 = self.hand_group.go(wait = True) 
     self.attach_srv(True, box_name)
-    time.sleep(2)
-    pose_target = geometry_msgs.msg.Pose()
+
+    pose_target.position.x = pose_goal.transform.translation.x
+    pose_target.position.y = pose_goal.transform.translation.y
     pose_target.position.z = 0.3
+    pose_target.orientation.x = 1
+    pose_target.orientation.y = 0
+    pose_target.orientation.z = 0 
+    pose_target.orientation.w = 0    
+    self.arm_group.set_pose_target(pose_target)
+    act_4 = self.arm_group.go(wait = True) 
   
 
 class myNode():
@@ -99,11 +117,22 @@ class myNode():
 
   def main(self):
     self.planner = Planner()
-    goal = self.getGoal('place')
-    goal_pose = self.tf_goal("GreenBox")
+
+    goal = self.getGoal("pick")
+    goal_pose = self.tf_goal("RedBox")
     self.planner.goToPose(goal_pose)
-    time.sleep(2)
-    self.planner.attachBox("GreenBox")
+    self.planner.attachBox("RedBox",goal_pose)
+
+    goal = self.getGoal("place")
+    goal_pose = self.tf_goal("DepositBoxRed")
+    self.planner.goToPose(goal_pose)
+    self.planner.detachBox("RedBox")
+    
+    # while goal!="end"
+    # 1 ciclo
+    # goal = self.getGoal('place')
+    # 1.2 ciclo
+    # goal = self.getGoal('pick')
 
     rospy.signal_shutdown("Task Completed")
     moveit_commander.roscpp_shutdown()
