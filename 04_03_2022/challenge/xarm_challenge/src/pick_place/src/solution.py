@@ -14,6 +14,9 @@ from moveit_msgs.msg import Grasp
 import geometry_msgs.msg
 import time
 
+CLOSED_JOINT_VALUE = {"drive_joint": 0.2}
+OPEN_JOINT_VALUE = {"drive_joint": 0.0}
+
 class Planner():
   def __init__(self):
     moveit_commander.roscpp_initialize(sys.argv)
@@ -66,12 +69,12 @@ class Planner():
                "DepositBoxBlue"]
 
     pose = geometry_msgs.msg.PoseStamped()
-    pose.header.frame_id = "world"
+    pose.header.frame_id = "link_base"
     pose.pose.orientation.w = 1.0
     box_name = targets[0]
-    self.scene.add_box(box_name, pose)
+    self.scene.add_box(box_name, pose, size=(0.1, 0.1, 0.1))
 
-  def goToPose(self,pose_goal):
+  def goToPose(self, pose_goal):
     pose_target = geometry_msgs.msg.Pose()
     pose_target.position.x = pose_goal.transform.translation.x
     pose_target.position.y = pose_goal.transform.translation.y
@@ -89,23 +92,21 @@ class Planner():
     #TODO: Open the gripper and call the service that releases the box
     time.sleep(1)
     self.hand_group.set_named_target("open")
-    act_2 = self.hand_group.go(wait = True) 
-    return self.attach_srv(False, box_name)
+    act_2 = self.hand_group.go(wait = True)
+    self.attach_srv(False, box_name)
 
   def attachBox(self, box_name, pose_goal):
     pose_target = geometry_msgs.msg.Pose()
     pose_target.position.x = pose_goal.transform.translation.x
     pose_target.position.y = pose_goal.transform.translation.y
-    pose_target.position.z = pose_goal.transform.translation.z+0.02
+    pose_target.position.z = pose_goal.transform.translation.z+0.015
     pose_target.orientation.x = 1
     pose_target.orientation.y = 0
     pose_target.orientation.z = 0 
     pose_target.orientation.w = 0    
     self.arm_group.set_pose_target(pose_target)
     act_3 = self.arm_group.go(wait = True) 
-    joint_target = moveit_msgs.msg.Grasp(10)
-    # self.hand_group.set_named_target("close")
-    self.hand_group.set_joint_value_target("close")
+    self.hand_group.set_joint_value_target(CLOSED_JOINT_VALUE)
     
     act_2 = self.hand_group.go(wait = True) 
     self.attach_srv(True, box_name)
@@ -120,56 +121,6 @@ class Planner():
     self.arm_group.set_pose_target(pose_target)
     act_4 = self.arm_group.go(wait = True)
 
-  def open_gripper(self,pose_goal):
-
-    # self.hand_group.set_named_target("open")
-    # act_4 = self.hand_group.go(wait = True)
-
-    grasp = Grasp()
-    # grasp.self.arm_group.get_current_pose()
-    grasp.grasp_pose.header.frame_id = "link_base"
-    grasp.grasp_pose.pose.position.x = pose_goal.transform.translation.x
-    grasp.grasp_pose.pose.position.y = pose_goal.transform.translation.y
-    grasp.grasp_pose.pose.position.z = pose_goal.transform.translation.z + 0.02
-    grasp.grasp_pose.pose.orientation.x = 1
-    grasp.grasp_pose.pose.orientation.y = 0
-    grasp.grasp_pose.pose.orientation.z = 0#pose_goal.transform.rotation.z
-    grasp.grasp_pose.pose.orientation.w = 0#pose_goal.transform.rotation.w
-    # print(pose_goal)
-
-    grasp.pre_grasp_approach.direction.header.frame_id = "link_base"
-    grasp.pre_grasp_approach.direction.vector.z = 1.0
-    grasp.pre_grasp_approach.min_distance = 0.1
-    grasp.pre_grasp_approach.desired_distance = 0.0
-
-
-    # grasp.post_grasp_retreat.direction.header.frame_id = "link_base"
-    # grasp.post_grasp_retreat.direction.vector.z = 1.0
-    # grasp.post_grasp_retreat.min_distance = 0.1
-    # grasp.post_grasp_retreat.desired_distance = 0.25
-
-    point_pre = JointTrajectoryPoint()
-    grasp.pre_grasp_posture.points.append(point_pre)
-    # print(grasp.pre_grasp_posture.points[0].positions)
-    grasp.pre_grasp_posture.joint_names.append("drive_joint")
-    grasp.pre_grasp_posture.points[0].positions.append(0.0)
-    grasp.pre_grasp_posture.points[0].time_from_start = rospy.Duration(2)
-
-    point = JointTrajectoryPoint()
-    grasp.grasp_posture.points.append(point)
-    # print(grasp.pre_grasp_posture.points[0].positions)
-    grasp.grasp_posture.joint_names.append("drive_joint")
-    grasp.grasp_posture.points[0].positions.append(0.35)
-    grasp.grasp_posture.points[0].time_from_start = rospy.Duration(2)
-
-    self.arm_group.pick("obj",grasp)
-
-    self.attach_srv(True, "BlueBox")
-
-    time.sleep(3)
-
-  def close_gripper():
-    pass
 
 class myNode():
   def __init__(self):
@@ -190,7 +141,7 @@ class myNode():
     trans = None
     while not trans:
       try:
-        trans = self.planner.tfBuffer.lookup_transform("link_base", goal , rospy.Time.now(), rospy.Duration(1.0))
+        trans = self.planner.tfBuffer.lookup_transform("link_base", goal, rospy.Time.now(), rospy.Duration(1.0))
       except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
         self.rate.sleep()
 
@@ -199,69 +150,23 @@ class myNode():
 
   def main(self):
     self.planner = Planner()
+    self.planner.addObstacles()
+    end = None
+    while not end:
+      pick_goal = self.getGoal("pick")
+      if pick_goal.goal == "End":
+        break
+      pick_goal_pose = self.tf_goal(pick_goal.goal)
+      self.planner.goToPose(pick_goal_pose)
+      self.planner.attachBox(pick_goal.goal, pick_goal_pose)
 
-    point = JointTrajectoryPoint()
-    # point.joint_names.append("drive_joint")
-    # point.positions.append(0.35)
-    # point.time_from_start = rospy.Duration(2)
-    hand_joints = {"drive_joint": 0.35}
-
-    self.planner.hand_group.set_joint_value_target(hand_joints)
-    act_2 = self.planner.hand_group.go(wait = True) 
-
-
-    # goal_pose = self.tf_goal("RedBox")
-    # self.planner.goToPose(goal_pose)
-    # self.planner.open_gripper(goal_pose)
-    # self.planner.hand_group.set_named_target("open")
-
-
-    # goal = self.getGoal("pick")
-    # goal_pose = self.tf_goal("RedBox")
-    # self.planner.goToPose(goal_pose)
-    # self.planner.attachBox("RedBox",goal_pose)
-   
-
-    # goal = self.getGoal("place")
-    # goal_pose = self.tf_goal("DepositBoxRed")
-    # self.planner.goToPose(goal_pose)
-    # self.planner.detachBox("RedBox")
-    # print(self.planner.arm_group.get_current_state())
-    # print(goal_pose)
-
-    
-    # goal = self.getGoal("pick")
-    # goal_pose = self.tf_goal("BlueBox")
-    # self.planner.goToPose(goal_pose)
-    # self.planner.attachBox("BlueBox",goal_pose)
-    # print(self.planner.arm_group.get_current_state())
+      place_goal = self.getGoal("place")
+      place_goal_pose = self.tf_goal(place_goal.goal)
+      self.planner.goToPose(place_goal_pose)
+      self.planner.detachBox(pick_goal.goal)
 
 
-    # goal = self.getGoal("place")
-    # goal_pose = self.tf_goal("DepositBoxBlue")
-    # self.planner.goToPose(goal_pose)
-    # self.planner.detachBox("BlueBox")
-    # print(self.planner.arm_group.get_current_state())
-
-
-    # goal = self.getGoal("pick")
-    # goal_pose = self.tf_goal("GreenBox")
-    # self.planner.goToPose(goal_pose)
-    # self.planner.attachBox("GreenBox",goal_pose)
-    # print(self.planner.arm_group.get_current_state())
-
-    # goal = self.getGoal("place")
-    # goal_pose = self.tf_goal("DepositBoxGreen")
-    # self.planner.goToPose(goal_pose)
-    # self.planner.detachBox("GreenBox")
-    # print(self.planner.arm_group.get_current_state())
-
-
-    # while goal!="end"
-    # 1 ciclo
-    # goal = self.getGoal('place')
-    # 1.2 ciclo
-    # goal = self.getGoal('pick')
+      # print(self.planner.arm_group.get_current_state())
 
     rospy.signal_shutdown("Task Completed")
     moveit_commander.roscpp_shutdown()
