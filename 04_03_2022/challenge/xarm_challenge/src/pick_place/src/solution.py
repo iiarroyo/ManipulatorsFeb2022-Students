@@ -20,6 +20,9 @@ OPEN_JOINT_VALUE = {"drive_joint": 0.0}
 
 class Planner():
     def __init__(self):
+        """
+        Initialise move it interface
+        """
         moveit_commander.roscpp_initialize(sys.argv)
         self.robot = moveit_commander.RobotCommander()
         self.arm_group = moveit_commander.MoveGroupCommander("xarm6")
@@ -52,46 +55,29 @@ class Planner():
         """
         Add obstables in the world
         """
-        #TO DO: Add obstables in the world
         #Cargo names
         targets = ["RedBox",
-                "BlueBox",
-                "GreenBox"]
-        targets_state = True
-        # Red box
-        rbox_pose = geometry_msgs.msg.PoseStamped()
-        rbox_pose.header.frame_id = targets[0]
-        rbox_pose.pose.orientation.w = 1.0
-        rbox_pose.pose.position.z = 0
-        rbox_name = targets[0]
-        self.scene.add_box(rbox_name, rbox_pose, size=(0.06, 0.06, 0.06))
-        targets_state = targets_state and self.wait_for_state_update(targets[0], box_is_known=True)
-        # Blue box
-        bbox_pose = geometry_msgs.msg.PoseStamped()
-        bbox_pose.header.frame_id = targets[1]
-        bbox_pose.pose.orientation.w = 2.0
-        bbox_pose.pose.position.z = 0
-        bbox_name = targets[1]
-        self.scene.add_box(bbox_name, bbox_pose, size=(0.06, 0.06, 0.06))
-        targets_state = targets_state and self.wait_for_state_update(targets[1], box_is_known=True)
-        # Green box
-        gbox_pose = geometry_msgs.msg.PoseStamped()
-        gbox_pose.header.frame_id = targets[2]
-        gbox_pose.pose.orientation.w = 3.0
-        gbox_pose.pose.position.z = 0
-        gbox_name = targets[2]
-        self.scene.add_box(gbox_name, gbox_pose, size=(0.06, 0.06, 0.06))
-        targets_state = targets_state and self.wait_for_state_update(targets[2], box_is_known=True)
-        #goal names
-        boxes = ["DepositBoxGreen",
-                "DepositBoxRed",
-                "DepositBoxBlue"]
-        return targets_state
+                   "BlueBox",
+                   "GreenBox",
+                   "RedBox"]
+        state = True
+        for target in targets:
+            box_pose = geometry_msgs.msg.PoseStamped()
+            box_pose.header.frame_id = target
+            box_pose.pose.orientation.w = 1.0
+            box_pose.pose.position.z = 0
+            box_name = target + "rviz"
+            self.scene.add_box(box_name, box_pose, size=(0.06, 0.06, 0.06))
+            state &= self.wait_for_state_update(target, box_is_known=True)
+        # boxes = ["DepositBoxGreen",
+        #          "DepositBoxRed",
+        #          "DepositBoxBlue"]
+        return state
 
     def goToPose(self, pose_goal):
         """
         Moves xarm6 group to given pose
-        :pose_goal:
+        :pose_goal: pose of box in PoseStamped() format
         """
         pose_target = geometry_msgs.msg.Pose()
         pose_target.position.x = pose_goal.transform.translation.x
@@ -101,14 +87,14 @@ class Planner():
         pose_target.orientation.y = 0
         pose_target.orientation.z = 0
         pose_target.orientation.w = 0
-
         self.arm_group.set_pose_target(pose_target)
-        act = self.arm_group.go(wait=True)
+        self.arm_group.go(wait=True)
         time.sleep(2)
 
     def detachBox(self, box_name):
         """
         Open the gripper and call the service that releases the box
+        :box_name: frame name that will be detached
         """
         time.sleep(1)
         self.hand_group.set_named_target("open")
@@ -116,6 +102,12 @@ class Planner():
         self.attach_srv(False, box_name)
 
     def attachBox(self, box_name, pose_goal):
+        """
+        Close the gripper and call the service that releases the box
+        :box_name: frame name that will be attached
+        :pose_goal: pose of box
+        """
+        # Lower gripper
         pose_target = geometry_msgs.msg.Pose()
         pose_target.position.x = pose_goal.transform.translation.x
         pose_target.position.y = pose_goal.transform.translation.y
@@ -125,12 +117,15 @@ class Planner():
         pose_target.orientation.z = 0
         pose_target.orientation.w = 0
         self.arm_group.set_pose_target(pose_target)
-        act_3 = self.arm_group.go(wait=True)
+        self.arm_group.go(wait=True)
 
+        # Close gripper
         self.hand_group.set_joint_value_target(CLOSED_JOINT_VALUE)
-        act_2 = self.hand_group.go(wait=True)
+        self.hand_group.go(wait=True)
+        # Call AttachObject service
         self.attach_srv(True, box_name)
 
+        # Raise gripper
         pose_target.position.x = pose_goal.transform.translation.x
         pose_target.position.y = pose_goal.transform.translation.y
         pose_target.position.z = 0.3
@@ -139,27 +134,35 @@ class Planner():
         pose_target.orientation.z = 0
         pose_target.orientation.w = 0
         self.arm_group.set_pose_target(pose_target)
-        act_4 = self.arm_group.go(wait=True)
+        self.arm_group.go(wait=True)
 
 
 class myNode():
     def __init__(self):
+        """
+        Initialise ROS and create the service calls
+        """
         rospy.init_node('pick_place', anonymous=True)
         self.rate = rospy.Rate(5)
-        # TODO: Initialise ROS and create the service calls
-
-        # Good practice trick, wait until the required services are online
-        # before continuing with the aplication
         rospy.wait_for_service('RequestGoal')
         rospy.wait_for_service('AttachObject')
 
     def getGoal(self, action):
-        # Call the service that will provide you with a suitable target for
-        # the movement
+        """
+        Call the service that will provide you with a suitable target for
+        the movement
+        :action: Attach service will be called with given action (pick, place)
+        """
         req_goal = rospy.ServiceProxy('RequestGoal', RequestGoal)
         return req_goal(action)
 
     def tf_goal(self, goal):
+        """
+        Use tf2 to retrieve the position of the target with respect to
+        the proper reference frame
+        :goal: string goal name
+        :return: PoseStamped()
+        """
         trans = None
         while not trans:
             try:
@@ -176,19 +179,19 @@ class myNode():
 
     def main(self):
         self.planner = Planner()
-        self.planner.addObstacles() # a
+        self.planner.addObstacles()  # 1
         while True:
-            pick_goal = self.getGoal("pick") # b
+            pick_goal = self.getGoal("pick")  # 2
             if pick_goal.goal == "End":
                 break
-            pick_goal_pose = self.tf_goal(pick_goal.goal) # c
-            self.planner.goToPose(pick_goal_pose)
-            self.planner.attachBox(pick_goal.goal, pick_goal_pose)
+            pick_goal_pose = self.tf_goal(pick_goal.goal)  # 3
+            self.planner.goToPose(pick_goal_pose)  # 4
+            self.planner.attachBox(pick_goal.goal, pick_goal_pose)  # 5
 
-            place_goal = self.getGoal("place")
-            place_goal_pose = self.tf_goal(place_goal.goal)
-            self.planner.goToPose(place_goal_pose)
-            self.planner.detachBox(pick_goal.goal)
+            place_goal = self.getGoal("place")  # 6
+            place_goal_pose = self.tf_goal(place_goal.goal)  # 7
+            self.planner.goToPose(place_goal_pose)  # 8
+            self.planner.detachBox(pick_goal.goal)  # 9
         rospy.signal_shutdown("Task Completed")
         moveit_commander.roscpp_shutdown()
 
