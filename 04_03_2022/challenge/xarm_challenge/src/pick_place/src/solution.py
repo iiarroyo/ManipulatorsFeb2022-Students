@@ -39,43 +39,54 @@ class Planner():
         start = rospy.get_time()
         seconds = rospy.get_time()
         while (seconds - start < timeout) and not rospy.is_shutdown():
-            # Test if the box is in attached objects
-
-            # Test if the box is in the scene.
-            # Note that attaching the box will remove it from known_objects
-            box_is_known = box_name in scene.get_known_object_names()
-            print(scene.get_known_object_names())
-            print(scene.get_attached_objects())
-
-            # Test if we are in the expected state
-            if ((box_is_attached == box_is_attached)
-                    and (box_is_known == box_is_known)):
+            attached_objects = scene.get_attached_objects([box_name])
+            is_attached = len(attached_objects.keys()) > 0
+            is_known = box_name in scene.get_known_object_names()
+            if (box_is_attached == is_attached) and (box_is_known == is_known):
                 return True
-
             rospy.sleep(0.1)
             seconds = rospy.get_time()
-
         return False
 
     def addObstacles(self):
         """
         Add obstables in the world
         """
-        # Cargo names
-        size = 3
+        #TO DO: Add obstables in the world
+        #Cargo names
         targets = ["RedBox",
-                   "BlueBox",
-                   "GreenBox"]
-        # goal names
+                "BlueBox",
+                "GreenBox"]
+        targets_state = True
+        # Red box
+        rbox_pose = geometry_msgs.msg.PoseStamped()
+        rbox_pose.header.frame_id = targets[0]
+        rbox_pose.pose.orientation.w = 1.0
+        rbox_pose.pose.position.z = 0
+        rbox_name = targets[0]
+        self.scene.add_box(rbox_name, rbox_pose, size=(0.06, 0.06, 0.06))
+        targets_state = targets_state and self.wait_for_state_update(targets[0], box_is_known=True)
+        # Blue box
+        bbox_pose = geometry_msgs.msg.PoseStamped()
+        bbox_pose.header.frame_id = targets[1]
+        bbox_pose.pose.orientation.w = 2.0
+        bbox_pose.pose.position.z = 0
+        bbox_name = targets[1]
+        self.scene.add_box(bbox_name, bbox_pose, size=(0.06, 0.06, 0.06))
+        targets_state = targets_state and self.wait_for_state_update(targets[1], box_is_known=True)
+        # Green box
+        gbox_pose = geometry_msgs.msg.PoseStamped()
+        gbox_pose.header.frame_id = targets[2]
+        gbox_pose.pose.orientation.w = 3.0
+        gbox_pose.pose.position.z = 0
+        gbox_name = targets[2]
+        self.scene.add_box(gbox_name, gbox_pose, size=(0.06, 0.06, 0.06))
+        targets_state = targets_state and self.wait_for_state_update(targets[2], box_is_known=True)
+        #goal names
         boxes = ["DepositBoxGreen",
-                 "DepositBoxRed",
-                 "DepositBoxBlue"]
-
-        pose = geometry_msgs.msg.PoseStamped()
-        pose.header.frame_id = "link_base"
-        pose.pose.orientation.w = 1.0
-        box_name = targets[0]
-        self.scene.add_box(box_name, pose, size=(0.1, 0.1, 0.1))
+                "DepositBoxRed",
+                "DepositBoxBlue"]
+        return targets_state
 
     def goToPose(self, pose_goal):
         """
@@ -108,15 +119,15 @@ class Planner():
         pose_target = geometry_msgs.msg.Pose()
         pose_target.position.x = pose_goal.transform.translation.x
         pose_target.position.y = pose_goal.transform.translation.y
-        pose_target.position.z = pose_goal.transform.translation.z+0.015
+        pose_target.position.z = pose_goal.transform.translation.z - 0.01
         pose_target.orientation.x = 1
         pose_target.orientation.y = 0
         pose_target.orientation.z = 0
         pose_target.orientation.w = 0
         self.arm_group.set_pose_target(pose_target)
         act_3 = self.arm_group.go(wait=True)
-        self.hand_group.set_joint_value_target(CLOSED_JOINT_VALUE)
 
+        self.hand_group.set_joint_value_target(CLOSED_JOINT_VALUE)
         act_2 = self.hand_group.go(wait=True)
         self.attach_srv(True, box_name)
 
@@ -165,13 +176,12 @@ class myNode():
 
     def main(self):
         self.planner = Planner()
-        # self.planner.addObstacles()
-        end = None
-        while not end:
-            pick_goal = self.getGoal("pick")
+        self.planner.addObstacles() # a
+        while True:
+            pick_goal = self.getGoal("pick") # b
             if pick_goal.goal == "End":
                 break
-            pick_goal_pose = self.tf_goal(pick_goal.goal)
+            pick_goal_pose = self.tf_goal(pick_goal.goal) # c
             self.planner.goToPose(pick_goal_pose)
             self.planner.attachBox(pick_goal.goal, pick_goal_pose)
 
@@ -179,7 +189,6 @@ class myNode():
             place_goal_pose = self.tf_goal(place_goal.goal)
             self.planner.goToPose(place_goal_pose)
             self.planner.detachBox(pick_goal.goal)
-            # print(self.planner.arm_group.get_current_state())
         rospy.signal_shutdown("Task Completed")
         moveit_commander.roscpp_shutdown()
 
